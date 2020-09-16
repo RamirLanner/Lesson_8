@@ -13,6 +13,5 @@ public class Game {
                 MainWindow mainWindow =new MainWindow();
             }
         });
-        TicTacToe.main();
     }
 }

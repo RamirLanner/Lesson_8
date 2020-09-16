@@ -1,15 +1,12 @@
 package TicTacToe;
 
-import MainView.MainWindow;
-
 import java.util.Arrays;
-import java.util.InputMismatchException;
-import java.util.Scanner;
+//import java.util.Scanner;
 
 public class TicTacToe {
 
-    public static final int SIZE = 5;
-    private static final int SIZE_TO_WIN = 4;
+    private static int SIZE; //= 5
+    private static int SIZE_TO_WIN;//= 4
     private static final char DOT_EMPTY = '•';
     private static final char DOT_X = 'X';
     private static final char DOT_O = 'O';
@@ -24,50 +21,155 @@ public class TicTacToe {
 
     private static int[][] scoreMap;
     private static char[][] gameMap;
-    private static final Scanner scanner = new Scanner(System.in);
+    //private static final Scanner scanner = new Scanner(System.in);
     //public static Random random = new Random();
 
-    public static void main() {
-        initGameMap();
-        while (true) {
-            humanTurn();
-            //printGameMap();
-            MainWindow.printGameMap(gameMap);
-            if (checkWin(DOT_X, SIZE_TO_WIN)) {
-                MainWindow.outToCommand("Победил человек. Игра закончена.");
-                //System.out.println("Победил человек");
-                break;
+
+    public TicTacToe(int size, int winStack) {
+        SIZE = size;
+        SIZE_TO_WIN = winStack;
+
+    }
+
+    public boolean checkWinHuman() {
+        return checkWin(DOT_X, SIZE_TO_WIN);
+    }
+
+    public boolean checkWinAI() {
+        return checkWin(DOT_O, SIZE_TO_WIN);
+    }
+
+    public char[][] getGameMap() {
+        return gameMap;
+    }
+
+    public boolean isMapFull() {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (gameMap[i][j] == DOT_EMPTY) return false;
             }
-            if (isMapFull()) {
-                MainWindow.outToCommand("Ничья. Игра закончена.");
-                //System.out.println("Ничья");
-                break;
+        }
+        return true;
+    }
+
+    private static boolean checkWin(char symb, int winStack) {
+        //должен работать на полях с настраеваемой размерностью не только 5 на 5
+        //алгортм для строк и столбцов
+        int winStrikeCol;
+        int winStrikeStr;
+        for (int i = 0; i < SIZE; i++) {
+            winStrikeStr = 0;
+            winStrikeCol = 0;
+            for (int j = 0; j < SIZE; j++) {
+                if (gameMap[i][j] == symb) {
+                    winStrikeStr++;
+                    if (winStrikeStr == winStack) {
+                        return true;
+                    }
+                } else {
+                    winStrikeStr = 0;
+                }
+                if (gameMap[j][i] == symb) {
+                    winStrikeCol++;
+                    if (winStrikeCol == winStack) {
+                        return true;
+                    }
+                } else {
+                    winStrikeCol = 0;
+                }
             }
-            MainWindow.outToCommand("Ход компьютера");
-            //System.out.println("Ai turn");
-            aiTurn();
-            //printGameMap();
-            MainWindow.printGameMap(gameMap);
-            if (checkWin(DOT_O, SIZE_TO_WIN)) {
-                MainWindow.outToCommand("Победил Искуственный Интеллект. Игра закончена.");
-                //System.out.println("Победил Искуственный Интеллект");
-                break;
+        }
+        //алгоритм для диагоналей, мне кажется еще можно оптимизировать... потом посмотрю если останется время
+        int winStrikeExtendBackslashHi = 0;
+        int winStrikeExtendSlashHi = 0;
+        int winStrikeExtendBackslashLow = 0;
+        int winStrikeExtendSlashLow = 0;
+        for (int k = 0; k <= (SIZE - winStack); k++) {//для того что бы определить кол-во доп диагоналей
+            for (int i = 0; i < SIZE - k; i++) {
+                //для диагоналей расположенных "выше" главной и побочной
+                //для главной и побочной считается дважды, при к=0. потом разберусь..
+                if (gameMap[i][i + k] == symb) {
+                    winStrikeExtendBackslashHi++;
+                    if (winStrikeExtendBackslashHi == winStack) {
+                        return true;
+                    }
+                } else {
+                    winStrikeExtendBackslashHi = 0;
+                }
+                if (gameMap[i][SIZE - (i + 1 + k)] == symb) {
+                    winStrikeExtendSlashHi++;
+                    if (winStrikeExtendSlashHi == winStack) {
+                        return true;
+                    }
+                } else {
+                    winStrikeExtendSlashHi = 0;
+                }
+//                для диагоналей расположенных "ниже" главной и побочной
+                if (gameMap[i + k][i] == symb) {
+                    winStrikeExtendBackslashLow++;
+                    if (winStrikeExtendBackslashLow == winStack) {
+                        return true;
+                    }
+                } else {
+                    winStrikeExtendBackslashLow = 0;
+                }
+                if (gameMap[i + k][SIZE - (i + 1)] == symb) {
+                    winStrikeExtendSlashLow++;
+                    if (winStrikeExtendSlashLow == winStack) {
+                        return true;
+                    }
+                } else {
+                    winStrikeExtendSlashLow = 0;
+                }
             }
-            if (isMapFull()) {
-                MainWindow.outToCommand("Ничья. Игра закончена.");
-                //System.out.println("Ничья");
-                break;
-            }
+            winStrikeExtendBackslashHi = 0;
+            winStrikeExtendSlashHi = 0;
+            winStrikeExtendBackslashLow = 0;
+            winStrikeExtendSlashLow = 0;
+        }
+        return false;
+    }
+
+    public boolean humanTurn(int btnPos) {
+        int x, y;
+        try {
+            x = btnPos % SIZE;
+            y = btnPos / SIZE;
+            //System.out.println("X= " + x + " Y=" + y);
+        } catch (Exception e) {
+            return false;
+        }
+        if (isCellValid(x, y)) {
+            gameMap[y][x] = DOT_X;
+            return true;
+        }
+        return false;
+    }
+
+    public static boolean isCellValid(int x, int y) {
+        if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) return false;
+        return gameMap[y][x] == DOT_EMPTY;
+    }
+
+    public void initGameMap() {
+        //я насоздавал массивов что бы не запутаться, огромное поле для оптимизации приложения
+        scoreMapCol = new int[SIZE][SIZE];
+        scoreMapStr = new int[SIZE][SIZE];
+        scoreMapSlash = new int[SIZE][SIZE];
+        scoreMapBackslash = new int[SIZE][SIZE];
+
+        gameMap = new char[SIZE][SIZE];
+        scoreMap = new int[SIZE][SIZE];
+
+        scoreMapAttack = new int[SIZE][SIZE];
+        scoreMapDef = new int[SIZE][SIZE];
+
+        for (char[] chars : gameMap) {
+            Arrays.fill(chars, DOT_EMPTY);
         }
     }
 
-//    private static void outArr(int[][] myArr) {
-//        for (int[] arr : myArr) {
-//            System.out.println(Arrays.toString(arr));
-//        }
-//    }
-
-    private static void aiTurn() {
+    public void aiTurn() {
         for (int i = 0; i < gameMap.length; i++) {
             for (int j = 0; j < gameMap[i].length; j++) {
                 if (gameMap[i][j] == DOT_EMPTY) {
@@ -102,7 +204,7 @@ public class TicTacToe {
                 }
             }
         }
-        //outArr(scoreMap);
+
         gameMap[turnAiX][turnAiY] = DOT_O;
 
     }
@@ -255,165 +357,4 @@ public class TicTacToe {
             }
         }
     }
-
-    private static boolean isMapFull() {
-        for (int i = 0; i < SIZE; i++) {
-            for (int j = 0; j < SIZE; j++) {
-                if (gameMap[i][j] == DOT_EMPTY) return false;
-            }
-        }
-        return true;
-    }
-
-    private static boolean checkWin(char symb, int winStack) {
-        //должен работать на полях с настраеваемой размерностью не только 5 на 5
-        //алгортм для строк и столбцов
-        int winStrikeCol;
-        int winStrikeStr;
-        for (int i = 0; i < SIZE; i++) {
-            winStrikeStr = 0;
-            winStrikeCol = 0;
-            for (int j = 0; j < SIZE; j++) {
-                if (gameMap[i][j] == symb) {
-                    winStrikeStr++;
-                    if (winStrikeStr == winStack) {
-                        return true;
-                    }
-                } else {
-                    winStrikeStr = 0;
-                }
-                if (gameMap[j][i] == symb) {
-                    winStrikeCol++;
-                    if (winStrikeCol == winStack) {
-                        return true;
-                    }
-                } else {
-                    winStrikeCol = 0;
-                }
-            }
-        }
-        //алгоритм для диагоналей, мне кажется еще можно оптимизировать... потом посмотрю если останется время
-        int winStrikeExtendBackslashHi = 0;
-        int winStrikeExtendSlashHi = 0;
-        int winStrikeExtendBackslashLow = 0;
-        int winStrikeExtendSlashLow = 0;
-        for (int k = 0; k <= (SIZE - winStack); k++) {//для того что бы определить кол-во доп диагоналей
-            for (int i = 0; i < SIZE - k; i++) {
-                //для диагоналей расположенных "выше" главной и побочной
-                //для главной и побочной считается дважды, при к=0. потом разберусь..
-                if (gameMap[i][i + k] == symb) {
-                    winStrikeExtendBackslashHi++;
-                    if (winStrikeExtendBackslashHi == winStack) {
-                        return true;
-                    }
-                } else {
-                    winStrikeExtendBackslashHi = 0;
-                }
-                if (gameMap[i][SIZE - (i + 1 + k)] == symb) {
-                    winStrikeExtendSlashHi++;
-                    if (winStrikeExtendSlashHi == winStack) {
-                        return true;
-                    }
-                } else {
-                    winStrikeExtendSlashHi = 0;
-                }
-//                для диагоналей расположенных "ниже" главной и побочной
-                if (gameMap[i + k][i] == symb) {
-                    winStrikeExtendBackslashLow++;
-                    if (winStrikeExtendBackslashLow == winStack) {
-                        return true;
-                    }
-                } else {
-                    winStrikeExtendBackslashLow = 0;
-                }
-                if (gameMap[i + k][SIZE - (i + 1)] == symb) {
-                    winStrikeExtendSlashLow++;
-                    if (winStrikeExtendSlashLow == winStack) {
-                        return true;
-                    }
-                } else {
-                    winStrikeExtendSlashLow = 0;
-                }
-            }
-            winStrikeExtendBackslashHi = 0;
-            winStrikeExtendSlashHi = 0;
-            winStrikeExtendBackslashLow = 0;
-            winStrikeExtendSlashLow = 0;
-        }
-        return false;
-    }
-
-    private static void humanTurn() {
-        //System.out.println(MainWindow.buttonClickListener());
-        int XY = 0;
-        int x = -1, y = -1;
-        do {
-            MainWindow.outToCommand("Сделайте ход!");
-            try {
-                XY = Integer.parseInt(MainWindow.buttonClickListener());
-                x = XY % SIZE;
-                y = XY / SIZE;
-                //System.out.println("X= "+x+" Y="+y);
-            } catch (Exception e) {
-                continue;
-            }
-        } while (!isCellValid(x, y));
-
-//        do {
-//            System.out.println("Введите координаты в формате X Y");
-//            try {
-//                x = scanner.nextInt() - 1;
-//                y = scanner.nextInt() - 1;
-//            } catch (InputMismatchException e) {
-//                System.out.println("Неверный формат");
-//                scanner.nextLine();
-//                x = -1;
-//                y = -1;
-//            }
-//        } while (!isCellValid(x, y)); // while(isCellValid(x, y) == false)
-        gameMap[y][x] = DOT_X;
-    }
-
-    public static boolean isCellValid(int x, int y) {
-        if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) return false;
-        return gameMap[y][x] == DOT_EMPTY;
-    }
-
-//    private static void printGameMap() {
-//
-//        for (int i = 0; i <= SIZE; i++) {
-//            System.out.print(i + " ");
-//        }
-//        System.out.println();
-//        for (int i = 0; i < SIZE; i++) {
-//            System.out.print((i + 1) + " ");
-//            for (int j = 0; j < SIZE; j++) {
-//                System.out.print(gameMap[i][j] + " ");
-//            }
-//            System.out.println();
-//        }
-//        System.out.println();
-//    }
-
-    private static void initGameMap() {
-        //я насоздавал массивов что бы не запутаться, огромное поле для оптимизации приложения
-        scoreMapCol = new int[SIZE][SIZE];
-        scoreMapStr = new int[SIZE][SIZE];
-        scoreMapSlash = new int[SIZE][SIZE];
-        scoreMapBackslash = new int[SIZE][SIZE];
-
-        gameMap = new char[SIZE][SIZE];
-        scoreMap = new int[SIZE][SIZE];
-
-        scoreMapAttack = new int[SIZE][SIZE];
-        scoreMapDef = new int[SIZE][SIZE];
-
-        for (char[] chars : gameMap) {
-            Arrays.fill(chars, DOT_EMPTY);
-        }
-        //printGameMap();
-        MainWindow.mapInit();
-        MainWindow.printGameMap(gameMap);
-    }
-
 }
